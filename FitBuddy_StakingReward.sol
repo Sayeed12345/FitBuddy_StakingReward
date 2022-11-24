@@ -1,42 +1,12 @@
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: MIT
 
-/*
-   ____            __   __        __   _
-  / __/__ __ ___  / /_ / /  ___  / /_ (_)__ __
- _\ \ / // // _ \/ __// _ \/ -_)/ __// / \ \ /
-/___/ \_, //_//_/\__//_//_/\__/ \__//_/ /_\_\
-     /___/
+pragma solidity ^0.8.0;
 
-* Synthetix: StakingRewards.sol
-*
-* Docs: https://docs.synthetix.io/
-*
-*
-* MIT License
-* ===========
-*
-* Copyright (c) 2020 Synthetix
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-*/
 
+// File: contracts\open-zeppelin-contracts\Address.sol
 
 library Address {
+
     /**
      * @dev Returns true if `account` is a contract.
      *
@@ -57,105 +27,14 @@ library Address {
         assembly { size := extcodesize(account) }
         return size > 0;
     }
+
 }
 
-interface IERC20 {
-    /**
-     * @dev Returns the amount of tokens in existence.
-     */
-    function totalSupply() external view returns (uint256);
 
-    /**
-     * @dev Returns the amount of tokens owned by `account`.
-     */
-    function balanceOf(address account) external view returns (uint256);
-
-    /**
-     * @dev Moves `amount` tokens from the caller's account to `recipient`.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a `Transfer` event.
-     */
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Returns the remaining number of tokens that `spender` will be
-     * allowed to spend on behalf of `owner` through `transferFrom`. This is
-     * zero by default.
-     *
-     * This value changes when `approve` or `transferFrom` are called.
-     */
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    /**
-     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * > Beware that changing an allowance with this method brings the risk
-     * that someone may use both the old and the new allowance by unfortunate
-     * transaction ordering. One possible solution to mitigate this race
-     * condition is to first reduce the spender's allowance to 0 and set the
-     * desired value afterwards:
-     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-     *
-     * Emits an `Approval` event.
-     */
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Moves `amount` tokens from `sender` to `recipient` using the
-     * allowance mechanism. `amount` is then deducted from the caller's
-     * allowance.
-     *
-     * Returns a boolean value indicating whether the operation succeeded.
-     *
-     * Emits a `Transfer` event.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-    /**
-     * @dev Emitted when `value` tokens are moved from one account (`from`) to
-     * another (`to`).
-     *
-     * Note that `value` may be zero.
-     */
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    /**
-     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
-     * a call to `approve`. `value` is the new allowance.
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-interface IStakingRewards {
-    // Views
-    function lastTimeRewardApplicable() external view returns (uint256);
-
-    function rewardPerToken() external view returns (uint256);
-
-    function earned(address account) external view returns (uint256);
-
-    function getRewardForDuration() external view returns (uint256);
-
-    function totalSupply() external view returns (uint256);
-
-    function balanceOf(address account) external view returns (uint256);
-
-    // Mutative
-
-    function stake(uint256 amount) external;
-
-    function withdraw(uint256 amount) external;
-
-    function getReward() external;
-
-    function exit() external;
-}
+// File: contracts\open-zeppelin-contracts\Math.sol
 
 library Math {
+
     /**
      * @dev Returns the largest of two numbers.
      */
@@ -178,185 +57,14 @@ library Math {
         // (a + b) / 2 can overflow, so we distribute
         return (a / 2) + (b / 2) + ((a % 2 + b % 2) / 2);
     }
+
 }
 
-contract Owned {
-    address public owner;
-    address public nominatedOwner;
 
-    constructor(address _owner) public {
-        require(_owner != address(0), "Owner address cannot be 0");
-        owner = _owner;
-        emit OwnerChanged(address(0), _owner);
-    }
-
-    function nominateNewOwner(address _owner) external onlyOwner {
-        nominatedOwner = _owner;
-        emit OwnerNominated(_owner);
-    }
-
-    function acceptOwnership() external {
-        require(msg.sender == nominatedOwner, "You must be nominated before you can accept ownership");
-        emit OwnerChanged(owner, nominatedOwner);
-        owner = nominatedOwner;
-        nominatedOwner = address(0);
-    }
-
-    modifier onlyOwner {
-        _onlyOwner();
-        _;
-    }
-
-    function _onlyOwner() private view {
-        require(msg.sender == owner, "Only the contract owner may perform this action");
-    }
-
-    event OwnerNominated(address newOwner);
-    event OwnerChanged(address oldOwner, address newOwner);
-}
-
-contract Pausable is Owned {
-    uint public lastPauseTime;
-    bool public paused;
-
-    constructor() internal {
-        // This contract is abstract, and thus cannot be instantiated directly
-        require(owner != address(0), "Owner must be set");
-        // Paused will be false, and lastPauseTime will be 0 upon initialisation
-    }
-
-    /**
-     * @notice Change the paused state of the contract
-     * @dev Only the contract owner may call this.
-     */
-    function setPaused(bool _paused) external onlyOwner {
-        // Ensure we're actually changing the state before we do anything
-        if (_paused == paused) {
-            return;
-        }
-
-        // Set our paused state.
-        paused = _paused;
-
-        // If applicable, set the last pause time.
-        if (paused) {
-            lastPauseTime = now;
-        }
-
-        // Let everyone know that our pause state has changed.
-        emit PauseChanged(paused);
-    }
-
-    event PauseChanged(bool isPaused);
-
-    modifier notPaused {
-        require(!paused, "This action cannot be performed while the contract is paused");
-        _;
-    }
-}
-
-contract ReentrancyGuard {
-    /// @dev counter to allow mutex lock with only one SSTORE operation
-    uint256 private _guardCounter;
-
-    constructor () internal {
-        // The counter starts at one to prevent changing it from zero to a non-zero
-        // value, which is a more expensive operation.
-        _guardCounter = 1;
-    }
-
-    /**
-     * @dev Prevents a contract from calling itself, directly or indirectly.
-     * Calling a `nonReentrant` function from another `nonReentrant`
-     * function is not supported. It is possible to prevent this from happening
-     * by making the `nonReentrant` function external, and make it call a
-     * `private` function that does the actual work.
-     */
-    modifier nonReentrant() {
-        _guardCounter += 1;
-        uint256 localCounter = _guardCounter;
-        _;
-        require(localCounter == _guardCounter, "ReentrancyGuard: reentrant call");
-    }
-}
-
-contract RewardsDistributionRecipient is Owned {
-    address public rewardsDistribution;
-
-    function notifyRewardAmount(uint256 reward) external;
-
-    modifier onlyRewardsDistribution() {
-        require(msg.sender == rewardsDistribution, "Caller is not RewardsDistribution contract");
-        _;
-    }
-
-    function setRewardsDistribution(address _rewardsDistribution) external onlyOwner {
-        rewardsDistribution = _rewardsDistribution;
-    }
-}
-
-library SafeERC20 {
-    using SafeMath for uint256;
-    using Address for address;
-
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
-    }
-
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
-    }
-
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. To increase and decrease it, use
-        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
-        // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
-    }
-
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value);
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-    }
-
-    /**
-     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-     * on the return value: the return value is optional (but if data is returned, it must not be false).
-     * @param token The token targeted by the call.
-     * @param data The call data (encoded using abi.encode or one of its variants).
-     */
-    function callOptionalReturn(IERC20 token, bytes memory data) private {
-        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
-        // we're implementing it ourselves.
-
-        // A Solidity high level call has three parts:
-        //  1. The target address is checked to verify it contains contract code
-        //  2. The call itself is made, and success asserted
-        //  3. The return value is decoded, which in turn checks the size of the returned data.
-        // solhint-disable-next-line max-line-length
-        require(address(token).isContract(), "SafeERC20: call to non-contract");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = address(token).call(data);
-        require(success, "SafeERC20: low-level call failed");
-
-        if (returndata.length > 0) { // Return data is optional
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
-        }
-    }
-}
+// File: contracts\open-zeppelin-contracts\SafeMath.sol
 
 library SafeMath {
+
     /**
      * @dev Returns the addition of two unsigned integers, reverting on
      * overflow.
@@ -447,9 +155,322 @@ library SafeMath {
         require(b != 0, "SafeMath: modulo by zero");
         return a % b;
     }
+
 }
 
+
+// File: contracts\open-zeppelin-contracts\SafeERC20.sol
+
+library SafeERC20 {
+
+    using SafeMath for uint256;
+    using Address for address;
+
+    function safeTransfer(IERC20 token, address to, uint256 value) internal {
+        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    }
+
+    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
+        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    }
+
+    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+        // safeApprove should only be called when setting an initial allowance,
+        // or when resetting it to zero. To increase and decrease it, use
+        // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
+        // solhint-disable-next-line max-line-length
+        require((value == 0) || (token.allowance(address(this), spender) == 0),
+            "SafeERC20: approve from non-zero to non-zero allowance"
+        );
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+    }
+
+    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(value);
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(value);
+        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    }
+
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function callOptionalReturn(IERC20 token, bytes memory data) private {
+        // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
+        // we're implementing it ourselves.
+
+        // A Solidity high level call has three parts:
+        //  1. The target address is checked to verify it contains contract code
+        //  2. The call itself is made, and success asserted
+        //  3. The return value is decoded, which in turn checks the size of the returned data.
+        // solhint-disable-next-line max-line-length
+        require(address(token).isContract(), "SafeERC20: call to non-contract");
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returndata) = address(token).call(data);
+        require(success, "SafeERC20: low-level call failed");
+
+        if (returndata.length > 0) { // Return data is optional
+            // solhint-disable-next-line max-line-length
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+        }
+    }
+
+}
+
+
+// File: contracts\open-zeppelin-contracts\Owned.sol
+
+contract Owned {
+
+    address public owner;
+    address public nominatedOwner;
+
+    event OwnerNominated(address newOwner);
+    event OwnerChanged(address oldOwner, address newOwner);
+
+    constructor(address _owner) {
+        require(_owner != address(0), "Owner address cannot be 0");
+        owner = _owner;
+        emit OwnerChanged(address(0), _owner);
+    }
+
+    function nominateNewOwner(address _owner) external onlyOwner {
+        nominatedOwner = _owner;
+        emit OwnerNominated(_owner);
+    }
+
+    function acceptOwnership() external {
+        require(msg.sender == nominatedOwner, "You must be nominated before you can accept ownership");
+        emit OwnerChanged(owner, nominatedOwner);
+        owner = nominatedOwner;
+        nominatedOwner = address(0);
+    }
+
+    modifier onlyOwner {
+        _onlyOwner();
+        _;
+    }
+
+    function _onlyOwner() private view {
+        require(msg.sender == owner, "Only the contract owner may perform this action");
+    }
+
+}
+
+
+// File: contracts\open-zeppelin-contracts\Pausable.sol
+
+abstract contract Pausable is Owned {
+
+    uint public lastPauseTime;
+    bool public paused;
+
+    event PauseChanged(bool isPaused);
+
+    modifier notPaused {
+        require(!paused, "This action cannot be performed while the contract is paused");
+        _;
+    }
+
+    constructor() {
+        // This contract is abstract, and thus cannot be instantiated directly
+        require(owner != address(0), "Owner must be set");
+        // Paused will be false, and lastPauseTime will be 0 upon initialisation
+    }
+
+    /**
+     * @notice Change the paused state of the contract
+     * @dev Only the contract owner may call this.
+     */
+    function setPaused(bool _paused) external onlyOwner {
+        // Ensure we're actually changing the state before we do anything
+        if (_paused == paused) {
+            return;
+        }
+
+        // Set our paused state.
+        paused = _paused;
+
+        // If applicable, set the last pause time.
+        if (paused) {
+            lastPauseTime = block.timestamp;
+        }
+
+        // Let everyone know that our pause state has changed.
+        emit PauseChanged(paused);
+    }
+
+}
+
+
+// File: contracts\open-zeppelin-contracts\RewardsDistributionRecipient.sol
+
+abstract contract RewardsDistributionRecipient is Owned {
+
+    address public rewardsDistribution;
+
+    modifier onlyRewardsDistribution() {
+        require(msg.sender == rewardsDistribution, "Caller is not RewardsDistribution contract");
+        _;
+    }
+
+    function notifyRewardAmount(uint256 reward) virtual external;    
+
+    function setRewardsDistribution(address _rewardsDistribution) external onlyOwner {
+        rewardsDistribution = _rewardsDistribution;
+    }
+
+}
+
+
+// File: contracts\open-zeppelin-contracts\ReentrancyGuard.sol
+
+abstract contract ReentrancyGuard {
+
+    /// @dev counter to allow mutex lock with only one SSTORE operation
+    uint256 private _guardCounter;
+
+    modifier nonReentrant() {
+    _guardCounter += 1;
+    uint256 localCounter = _guardCounter;
+    _;
+    require(localCounter == _guardCounter, "ReentrancyGuard: reentrant call");
+    }
+
+    constructor () {
+        // The counter starts at one to prevent changing it from zero to a non-zero
+        // value, which is a more expensive operation.
+        _guardCounter = 1;
+    }
+
+    /**
+     * @dev Prevents a contract from calling itself, directly or indirectly.
+     * Calling a `nonReentrant` function from another `nonReentrant`
+     * function is not supported. It is possible to prevent this from happening
+     * by making the `nonReentrant` function external, and make it call a
+     * `private` function that does the actual work.
+     */
+
+}
+
+
+// File: contracts\open-zeppelin-contracts\IERC20.sol
+
+interface IERC20 {
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to `approve`. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a `Transfer` event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through `transferFrom`. This is
+     * zero by default.
+     *
+     * This value changes when `approve` or `transferFrom` are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * > Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an `Approval` event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a `Transfer` event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+}
+
+
+// File: contracts\open-zeppelin-contracts\IStakingRewards.sol
+
+interface IStakingRewards {
+
+    // Views
+    function lastTimeRewardApplicable() external view returns (uint256);
+
+    function rewardPerToken() external view returns (uint256);
+
+    function earned(address account) external view returns (uint256);
+
+    function getRewardForDuration() external view returns (uint256);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
+
+    // Mutative
+
+    function stake(uint256 amount) external;
+
+    function withdraw(uint256 amount) external;
+
+    function getReward() external;
+
+    function exit() external;
+
+}
+
+
+// File: contracts\open-zeppelin-contracts\StakingRewards.sol
+
 contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, ReentrancyGuard, Pausable {
+
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -463,11 +484,33 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
 
+    uint256 private _totalSupply;
+
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
-    uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
+
+    /* ========== MODIFIERS ========== */
+
+    modifier updateReward(address account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
+            rewards[account] = earned(account);
+            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+        }
+        _;
+    }
+
+    /* ========== EVENTS ========== */
+
+    event RewardAdded(uint256 reward);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address indexed user, uint256 reward);
+    event RewardsDurationUpdated(uint256 newDuration);
+    event Recovered(address token, uint256 amount);
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -477,7 +520,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         address _rewardsToken,
         address _stakingToken,
         uint256 _rewardsDuration
-    ) public Owned(_owner) {
+    ) Owned(_owner) {
         rewardsToken = IERC20(_rewardsToken);
         stakingToken = IERC20(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
@@ -550,7 +593,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
-    function notifyRewardAmount(uint256 reward) external onlyRewardsDistribution updateReward(address(0)) {
+    function notifyRewardAmount(uint256 reward) external override onlyRewardsDistribution updateReward(address(0)) {
         // handle the transfer of reward tokens via `transferFrom` to reduce the number
         // of transactions required and ensure correctness of the reward amount
         rewardsToken.safeTransferFrom(msg.sender, address(this), reward);
@@ -584,24 +627,4 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         emit RewardsDurationUpdated(rewardsDuration);
     }
 
-    /* ========== MODIFIERS ========== */
-
-    modifier updateReward(address account) {
-        rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = lastTimeRewardApplicable();
-        if (account != address(0)) {
-            rewards[account] = earned(account);
-            userRewardPerTokenPaid[account] = rewardPerTokenStored;
-        }
-        _;
-    }
-
-    /* ========== EVENTS ========== */
-
-    event RewardAdded(uint256 reward);
-    event Staked(address indexed user, uint256 amount);
-    event Withdrawn(address indexed user, uint256 amount);
-    event RewardPaid(address indexed user, uint256 reward);
-    event RewardsDurationUpdated(uint256 newDuration);
-    event Recovered(address token, uint256 amount);
 }
