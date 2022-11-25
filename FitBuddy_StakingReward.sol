@@ -173,9 +173,7 @@ library SafeERC20 {
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
-            "SafeERC20: approve from non-zero to non-zero allowance"
-        );
+        require((value == 0) || (token.allowance(address(this), spender) == 0), "SafeERC20: approve from non-zero to non-zero allowance");
         callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
     }
 
@@ -261,6 +259,7 @@ contract Owned {
 abstract contract Pausable is Owned {
 
     uint public lastPauseTime;
+
     bool public paused;
 
     event PauseChanged(bool isPaused);
@@ -430,6 +429,7 @@ interface IERC20 {
 interface IStakingRewards {
 
     // Views
+    
     function lastTimeRewardApplicable() external view returns (uint256);
 
     function rewardPerToken() external view returns (uint256);
@@ -466,17 +466,16 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
 
     IERC20 public rewardsToken;
     IERC20 public stakingToken;
+
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
     uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
-
     uint256 private _totalSupply;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
-
     mapping(address => uint256) private _balances;
 
     /* ========== MODIFIERS ========== */
