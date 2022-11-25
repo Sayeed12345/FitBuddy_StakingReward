@@ -198,7 +198,6 @@ library SafeERC20 {
     function callOptionalReturn(IERC20 token, bytes memory data) private {
         // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
         // we're implementing it ourselves.
-
         // A Solidity high level call has three parts:
         //  1. The target address is checked to verify it contains contract code
         //  2. The call itself is made, and success asserted
@@ -286,15 +285,12 @@ abstract contract Pausable is Owned {
         if (_paused == paused) {
             return;
         }
-
         // Set our paused state.
         paused = _paused;
-
         // If applicable, set the last pause time.
         if (paused) {
             lastPauseTime = block.timestamp;
         }
-
         // Let everyone know that our pause state has changed.
         emit PauseChanged(paused);
     }
